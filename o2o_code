@@ -1,0 +1,27 @@
+#coding=utf8
+import pandas as pd
+import datetime
+
+path =u'~/下载/020初赛数据/'
+test_data = pd.read_csv(path+'ccf_offline_stage1_test_revised.csv')
+offline_data = pd.read_csv(path+'ccf_offline_stage1_train.csv')
+online_data = pd.read_csv(path+'ccf_online_stage1_train.csv')
+
+#在线购买数据筛选
+online_data_buy = online_data[(online_data['Action']==1)]
+online_data_buy['Distance'] = -1
+
+#合并线上线下购买数据
+data_buy = offline_data.append(online_data_buy[offline_data.columns])
+data_buy.index = range(len(data_buy))
+
+data_buy['Date'] = pd.to_datetime(data_buy['Date'].replace('null',''))
+data_buy['Date_received']= pd.to_datetime(data_buy['Date_received'].replace('null',''))
+data_buy[u'消费券使用天数'] = (data_buy['Date'] - data_buy['Date_received']).astype('timedelta64[D]')
+data_buy[u'15天消费券使用'] = 0
+data_buy[u'15天消费券使用'].loc[data_buy[u'消费券使用天数']<=15] = 1
+
+data_buy.describe()
+
+#构建特征
+#1.用户特征：使用优惠券的概率
